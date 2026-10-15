@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Bibple Chat</string>
+    <string name="title_activity_main">Bibple Chat</string>
+    <string name="package_name">com.bibple.chat</string>
+    <string name="custom_url_scheme">com.bibple.chat</string>
+</resources>
