@@ -42,14 +42,19 @@ jobs:
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew assembleDebug assembleRelease bundleRelease
+          ./gradlew assembleDebug --stacktrace 2>&1 | tee ../android_build.log || {
+            echo "## Android Build Failed" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            tail -n 50 ../android_build.log >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            exit 1
+          }
 
       - name: Upload Android Release Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: android-release-bundle
           path: |
-            android/app/build/outputs/bundle/release/*.aab
             android/app/build/outputs/apk/*/*.apk
 
   build-ios:
@@ -81,7 +86,13 @@ jobs:
       - name: Build Xcode Project
         run: |
           cd ios/App
-          xcodebuild -project App.xcodeproj -scheme App -destination "generic/platform=iOS" CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" clean build
+          xcodebuild -project App.xcodeproj -scheme App -destination "generic/platform=iOS" CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" clean build 2>&1 | tee ../../ios_build.log || {
+            echo "## iOS Build Failed" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            tail -n 50 ../../ios_build.log >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            exit 1
+          }
 
       - name: Upload iOS Project Artifact
         uses: actions/upload-artifact@v4
