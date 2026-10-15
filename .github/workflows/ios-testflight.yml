@@ -29,7 +29,11 @@ jobs:
         run: npm run build
 
       - name: Copy Assets to iOS
-        run: npm run cap copy ios
+        run: |
+          mkdir -p ios/App/App/public
+          cp -r dist/* ios/App/App/public/
+          cp capacitor.config.json ios/App/App/capacitor.config.json
+          touch ios/App/App/public/cordova.js ios/App/App/public/cordova_plugins.js
 
       - name: Setup Ruby and Fastlane
         uses: ruby/setup-ruby@v1

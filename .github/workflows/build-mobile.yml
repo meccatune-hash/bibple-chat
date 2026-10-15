@@ -32,7 +32,11 @@ jobs:
         run: npm run build
 
       - name: Copy Assets to Android
-        run: npm run cap copy android
+        run: |
+          mkdir -p android/app/src/main/assets/public
+          cp -r dist/* android/app/src/main/assets/public/
+          cp capacitor.config.json android/app/src/main/assets/capacitor.config.json
+          touch android/app/src/main/assets/public/cordova.js android/app/src/main/assets/public/cordova_plugins.js
 
       - name: Build Android APK & Release Bundle
         run: |
@@ -68,7 +72,11 @@ jobs:
         run: npm run build
 
       - name: Copy Assets to iOS
-        run: npm run cap copy ios
+        run: |
+          mkdir -p ios/App/App/public
+          cp -r dist/* ios/App/App/public/
+          cp capacitor.config.json ios/App/App/capacitor.config.json
+          touch ios/App/App/public/cordova.js ios/App/App/public/cordova_plugins.js
 
       - name: Build Xcode Project
         run: |
