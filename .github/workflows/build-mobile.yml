@@ -31,8 +31,8 @@ jobs:
       - name: Build Web Dist
         run: npm run build
 
-      - name: Sync Capacitor Android
-        run: npx cap sync android
+      - name: Copy Assets to Android
+        run: npx cap copy android
 
       - name: Build Android APK & Release Bundle
         run: |
@@ -50,7 +50,7 @@ jobs:
 
   build-ios:
     name: Build iOS Xcode Project
-    runs-on: macos-latest
+    runs-on: macos-14
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -67,13 +67,13 @@ jobs:
       - name: Build Web Dist
         run: npm run build
 
-      - name: Sync Capacitor iOS
-        run: npx cap sync ios
+      - name: Copy Assets to iOS
+        run: npx cap copy ios
 
       - name: Build Xcode Project
         run: |
           cd ios/App
-          xcodebuild -workspace App.xcworkspace -scheme App -destination generic/platform=iOS clean build CODE_SIGNING_ALLOWED=NO
+          xcodebuild -project App.xcodeproj -scheme App -destination generic/platform=iOS clean build CODE_SIGNING_ALLOWED=NO
 
       - name: Upload iOS Project Artifact
         uses: actions/upload-artifact@v4

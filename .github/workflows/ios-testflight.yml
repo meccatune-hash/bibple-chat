@@ -28,8 +28,8 @@ jobs:
       - name: Build Web Dist
         run: npm run build
 
-      - name: Sync Capacitor iOS
-        run: npx cap sync ios
+      - name: Copy Assets to iOS
+        run: npx cap copy ios
 
       - name: Setup Ruby and Fastlane
         uses: ruby/setup-ruby@v1
