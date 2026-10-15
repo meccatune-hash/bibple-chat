@@ -32,7 +32,7 @@ jobs:
         run: npm run build
 
       - name: Copy Assets to Android
-        run: npx cap copy android
+        run: npm run cap copy android
 
       - name: Build Android APK & Release Bundle
         run: |
@@ -68,7 +68,7 @@ jobs:
         run: npm run build
 
       - name: Copy Assets to iOS
-        run: npx cap copy ios
+        run: npm run cap copy ios
 
       - name: Build Xcode Project
         run: |

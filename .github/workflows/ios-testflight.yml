@@ -29,7 +29,7 @@ jobs:
         run: npm run build
 
       - name: Copy Assets to iOS
-        run: npx cap copy ios
+        run: npm run cap copy ios
 
       - name: Setup Ruby and Fastlane
         uses: ruby/setup-ruby@v1
