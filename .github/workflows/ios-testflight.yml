@@ -31,55 +31,21 @@ jobs:
       - name: Sync Capacitor iOS
         run: npx cap sync ios
 
-      - name: Install Apple Certificate & Provisioning Profile
+      - name: Setup Ruby and Fastlane
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2'
+          bundler-cache: false
+
+      - name: Run Fastlane Beta (Auto Sign & Upload)
+        working-directory: ios/App
         env:
+          APP_STORE_KEY_ID: ${{ secrets.APP_STORE_KEY_ID }}
+          APP_STORE_ISSUER_ID: ${{ secrets.APP_STORE_ISSUER_ID }}
+          APP_STORE_API_KEY_BASE64: ${{ secrets.APP_STORE_API_KEY_BASE64 }}
           BUILD_CERTIFICATE_BASE64: ${{ secrets.BUILD_CERTIFICATE_BASE64 }}
           P12_PASSWORD: ${{ secrets.P12_PASSWORD }}
           BUILD_PROVISION_PROFILE_BASE64: ${{ secrets.BUILD_PROVISION_PROFILE_BASE64 }}
-          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
         run: |
-          CERTIFICATE_PATH=$RUNNER_TEMP/build_certificate.p12
-          PP_PATH=$RUNNER_TEMP/build_pp.mobileprovision
-          KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
-
-          echo -n "$BUILD_CERTIFICATE_BASE64" | base64 --decode -o $CERTIFICATE_PATH
-          echo -n "$BUILD_PROVISION_PROFILE_BASE64" | base64 --decode -o $PP_PATH
-
-          security create-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
-          security set-keychain-settings -lut 21600 $KEYCHAIN_PATH
-          security unlock-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
-
-          security import $CERTIFICATE_PATH -P "$P12_PASSWORD" -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
-          security set-key-partition-list -S apple-tool:,apple: -s -k "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
-          security list-keychain -d user -s $KEYCHAIN_PATH
-
-          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
-          cp $PP_PATH ~/Library/MobileDevice/Provisioning\ Profiles/
-
-      - name: Archive iOS App
-        run: |
-          cd ios/App
-          xcodebuild -workspace App.xcworkspace \
-            -scheme App \
-            -configuration Release \
-            -archivePath $RUNNER_TEMP/BibpleChat.xcarchive \
-            CURRENT_PROJECT_VERSION=${{ github.event.inputs.build_number || '1' }} \
-            archive
-
-      - name: Export IPA
-        run: |
-          cd ios/App
-          xcodebuild -exportArchive \
-            -archivePath $RUNNER_TEMP/BibpleChat.xcarchive \
-            -exportPath $RUNNER_TEMP/export \
-            -exportOptionsPlist exportOptions.plist
-
-      - name: Upload to App Store Connect / TestFlight
-        env:
-          API_KEY_BASE64: ${{ secrets.APP_STORE_API_KEY_BASE64 }}
-          KEY_ID: ${{ secrets.APP_STORE_KEY_ID }}
-          ISSUER_ID: ${{ secrets.APP_STORE_ISSUER_ID }}
-        run: |
-          mkdir -p ~/.appstoreconnect/private_keys
-          echo -n "$API_KEY_BASE64" | base64 --decode -o ~/.appstoreconnect/private_keys/AuthKey_${KEY_ID}.p8
-          xcrun altool --upload-app -f $RUNNER_TEMP/export/App.ipa -t ios --apiKey "$KEY_ID" --apiIssuer "$ISSUER_ID"
+          gem install fastlane
+          fastlane ios beta
