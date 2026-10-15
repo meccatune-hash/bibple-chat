@@ -24,9 +24,32 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const [countryFilter, setCountryFilter] = useState<string>('all');
   const [roomTypeFilter, setRoomTypeFilter] = useState<'all' | 'global' | 'group'>('all');
   const [showSettings, setShowSettings] = useState(false);
+  const [showMobileSearch, setShowMobileSearch] = useState(false);
+
+  const query = searchQuery.trim().toLowerCase();
+
+  const searchMatchingRooms = query 
+    ? rooms.filter(r => r.name.toLowerCase().includes(query) || r.description.toLowerCase().includes(query))
+    : [];
+
+  const searchMatchingUsers = query
+    ? allUsers.filter(u => 
+        u.id !== currentUser?.id && (
+          u.name.toLowerCase().includes(query) ||
+          u.country.toLowerCase().includes(query) ||
+          u.occupation.toLowerCase().includes(query) ||
+          (u.bio && u.bio.toLowerCase().includes(query))
+        )
+      )
+    : [];
 
   const filteredRooms = rooms.filter(r => {
     if (r.type === 'direct') return false; // direct messages shown separately
+    if (query) {
+      const matchName = r.name.toLowerCase().includes(query);
+      const matchDesc = r.description.toLowerCase().includes(query);
+      if (!matchName && !matchDesc) return false;
+    }
     if (roomTypeFilter === 'global' && r.type !== 'global') return false;
     if (roomTypeFilter === 'group' && r.type !== 'group') return false;
     if (countryFilter !== 'all' && r.country && r.country !== countryFilter) return false;
@@ -37,7 +60,16 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const uniqueCountries = [...new Set(rooms.filter(r => r.country).map(r => r.country!))];
   const directRooms = rooms.filter(r => r.type === 'direct');
   
-  const displayedUsers = allUsers.filter(u => u.id !== currentUser?.id);
+  const displayedUsers = allUsers.filter(u => {
+    if (u.id === currentUser?.id) return false;
+    if (query) {
+      const matchName = u.name.toLowerCase().includes(query);
+      const matchCountry = u.country.toLowerCase().includes(query);
+      const matchOcc = u.occupation.toLowerCase().includes(query);
+      return matchName || matchCountry || matchOcc;
+    }
+    return true;
+  });
 
   return (
     <div className="flex h-screen w-full bg-gray-50 overflow-hidden text-gray-800">
@@ -53,17 +85,106 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           <div className="font-bold text-xl text-bibple-600">💬 Bibple Chat</div>
         </div>
 
-        <div className="hidden md:flex max-w-md w-full px-4">
-          <input 
-            type="text" 
-            placeholder="Search people, chats..." 
-            className="w-full px-4 py-2 bg-gray-100 border-none rounded-full focus:ring-2 focus:ring-bibple-500 focus:outline-none"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
+        {/* Desktop Search Bar */}
+        <div className="hidden md:flex max-w-md w-full px-4 relative">
+          <div className="relative w-full">
+            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm">🔍</span>
+            <input 
+              type="text" 
+              placeholder="대화방, 성도 검색 (Search rooms, people)..." 
+              className="w-full pl-9 pr-8 py-2 bg-gray-100 border-none rounded-full text-sm focus:ring-2 focus:ring-bibple-500 focus:bg-white focus:outline-none transition-all"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+            {searchQuery && (
+              <button 
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 hover:text-gray-600 rounded-full w-4 h-4 flex items-center justify-center bg-gray-200"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+
+          {/* Floating Search Results Dropdown */}
+          {query && (
+            <div className="absolute top-full left-4 right-4 mt-2 bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden z-50 max-h-96 overflow-y-auto">
+              <div className="p-3 border-b border-gray-100 bg-gray-50 flex items-center justify-between text-xs text-gray-500">
+                <span>검색 결과: "{searchQuery}"</span>
+                <button onClick={() => setSearchQuery('')} className="text-gray-400 hover:text-gray-600">닫기</button>
+              </div>
+
+              {/* Rooms results */}
+              {searchMatchingRooms.length > 0 && (
+                <div className="p-2">
+                  <div className="text-[10px] font-bold text-gray-400 uppercase px-3 py-1">대화방 ({searchMatchingRooms.length})</div>
+                  {searchMatchingRooms.map(r => (
+                    <button
+                      key={r.id}
+                      onClick={() => {
+                        setActiveRoomId(r.id);
+                        setSearchQuery('');
+                      }}
+                      className="w-full text-left px-3 py-2 rounded-xl hover:bg-indigo-50 flex items-center gap-2.5 transition-colors"
+                    >
+                      <span className="text-xl">{r.icon}</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-semibold text-xs text-gray-800 truncate">{r.name}</div>
+                        <div className="text-[11px] text-gray-400 truncate">{r.description}</div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* People results */}
+              {searchMatchingUsers.length > 0 && (
+                <div className="p-2 border-t border-gray-50">
+                  <div className="text-[10px] font-bold text-gray-400 uppercase px-3 py-1">성도 / 회원 ({searchMatchingUsers.length})</div>
+                  {searchMatchingUsers.map(u => (
+                    <button
+                      key={u.id}
+                      onClick={() => {
+                        setShowMembers(true);
+                        setSearchQuery('');
+                      }}
+                      className="w-full text-left px-3 py-2 rounded-xl hover:bg-indigo-50 flex items-center gap-2.5 transition-colors"
+                    >
+                      <CharacterAvatar config={u.avatar} size={28} tier={u.tier} showTierBadge />
+                      <div className="flex-1 min-w-0">
+                        <div className="font-semibold text-xs text-gray-800 flex items-center gap-1">
+                          <span>{u.name}</span>
+                          <span className="text-[10px]">{u.countryFlag}</span>
+                        </div>
+                        <div className="text-[10px] text-gray-400">{u.occupation} • {u.country}</div>
+                      </div>
+                      {u.tier && (
+                        <span className="text-xs">{DONOR_TIERS[u.tier]?.badge}</span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {searchMatchingRooms.length === 0 && searchMatchingUsers.length === 0 && (
+                <div className="p-6 text-center text-xs text-gray-400">
+                  <span>일치하는 대화방이나 성도를 찾을 수 없습니다.</span>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 sm:gap-4">
+          {/* Mobile search toggle */}
+          <button 
+            className="md:hidden p-2 rounded-full hover:bg-gray-100 text-gray-600 text-base"
+            onClick={() => setShowMobileSearch(!showMobileSearch)}
+            title="검색"
+          >
+            🔍
+          </button>
+
           <button 
             onClick={() => setAutoTranslate(!autoTranslate)}
             className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${autoTranslate ? 'bg-bibple-100 text-bibple-700' : 'bg-gray-100 text-gray-600'}`}
@@ -100,6 +221,31 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           )}
         </div>
       </header>
+
+      {/* Mobile Expandable Search Bar */}
+      {showMobileSearch && (
+        <div className="fixed top-16 left-0 right-0 z-30 bg-white border-b border-gray-200 p-3 shadow-md md:hidden">
+          <div className="relative">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">🔍</span>
+            <input 
+              type="text" 
+              placeholder="대화방, 성도 검색..." 
+              className="w-full pl-9 pr-8 py-2 bg-gray-100 rounded-xl text-sm outline-none focus:ring-2 focus:ring-bibple-500"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              autoFocus
+            />
+            {searchQuery && (
+              <button 
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Mobile Sidebar Overlay */}
       {sidebarOpen && (
