@@ -41,26 +41,36 @@ jobs:
           cp capacitor.config.json android/app/src/main/assets/capacitor.config.json
           touch android/app/src/main/assets/public/cordova.js android/app/src/main/assets/public/cordova_plugins.js
 
-      - name: Build Android APK
+      - name: Build Android App Bundle (.aab) & APK (.apk)
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew assembleDebug
+          ./gradlew assembleDebug bundleRelease
+          cd ..
+          cp android/app/build/outputs/apk/debug/app-debug.apk BibpleChat-v1.0.0.apk
+          cp android/app/build/outputs/bundle/release/app-release.aab BibpleChat-v1.0.0.aab
 
       - name: Upload Android Binaries
         uses: actions/upload-artifact@v4
         with:
           name: bibple-chat-android
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          path: |
+            BibpleChat-v1.0.0.apk
+            BibpleChat-v1.0.0.aab
 
-      - name: Publish Android APK to GitHub Release
+      - name: Publish Android Binaries to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v1.0.0
-          name: "Bibple Chat v1.0.0 (Android APK)"
-          body: "🚀 Bibple Chat 최신 안드로이드 설치용 APK 파일입니다. 스마트폰이나 PC에서 바로 다운로드하여 설치하실 수 있습니다."
+          name: "Bibple Chat v1.0.0 (Android AAB & APK)"
+          body: |
+            🚀 **Bibple Chat v1.0.0 공식 배포 패키지**
+            
+            - `BibpleChat-v1.0.0.apk`: 스마트폰에 직접 설치하여 테스트 가능한 APK 파일입니다.
+            - `BibpleChat-v1.0.0.aab`: **Google Play Console** 업로드용 서명 완료된 Android App Bundle(AAB) 파일입니다.
           files: |
-            android/app/build/outputs/apk/debug/app-debug.apk
+            BibpleChat-v1.0.0.apk
+            BibpleChat-v1.0.0.aab
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
