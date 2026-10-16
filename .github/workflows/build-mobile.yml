@@ -38,21 +38,21 @@ jobs:
           cp capacitor.config.json android/app/src/main/assets/capacitor.config.json
           touch android/app/src/main/assets/public/cordova.js android/app/src/main/assets/public/cordova_plugins.js
 
-      - name: Build Android APK
+      - name: Build Android APK & App Bundle
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew assembleDebug
-          cd ..
-          mkdir -p dist-android
-          cp -r android/app/build/outputs/* dist-android/
-          ls -la dist-android/
+          ./gradlew assembleDebug bundleDebug
+          ls -la app/build/outputs/apk/debug/
+          ls -la app/build/outputs/bundle/debug/
 
-      - name: Upload Android Artifacts
+      - name: Upload Android Binaries
         uses: actions/upload-artifact@v4
         with:
-          name: android-apk-bundle
-          path: dist-android/
+          name: bibple-chat-android
+          path: |
+            android/app/build/outputs/apk/debug/app-debug.apk
+            android/app/build/outputs/bundle/debug/app-debug.aab
 
   build-ios:
     name: Build iOS Xcode Project
