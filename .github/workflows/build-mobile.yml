@@ -5,6 +5,9 @@ on:
     branches: [ main, master ]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build-android:
     name: Build Android App Bundle (.aab & .apk)
@@ -49,6 +52,17 @@ jobs:
         with:
           name: bibple-chat-android
           path: android/app/build/outputs/apk/debug/app-debug.apk
+
+      - name: Publish Android APK to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0.0
+          name: "Bibple Chat v1.0.0 (Android APK)"
+          body: "🚀 Bibple Chat 최신 안드로이드 설치용 APK 파일입니다. 스마트폰이나 PC에서 바로 다운로드하여 설치하실 수 있습니다."
+          files: |
+            android/app/build/outputs/apk/debug/app-debug.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   build-ios:
     name: Build iOS Xcode Project
