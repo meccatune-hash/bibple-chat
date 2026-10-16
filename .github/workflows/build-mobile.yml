@@ -42,10 +42,12 @@ jobs:
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew assembleDebug bundleRelease --stacktrace
-          mkdir -p ../dist-android
-          find . -type f \( -name "*.apk" -o -name "*.aab" \) -exec cp {} ../dist-android/ \;
-          ls -la ../dist-android/
+          ./gradlew assembleRelease bundleRelease
+          cd ..
+          mkdir -p dist-android
+          cp android/app/build/outputs/apk/release/*.apk dist-android/ || true
+          cp android/app/build/outputs/bundle/release/*.aab dist-android/ || true
+          ls -la dist-android/
 
       - name: Upload Android Release Artifacts
         uses: actions/upload-artifact@v4
