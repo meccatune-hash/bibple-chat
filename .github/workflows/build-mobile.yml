@@ -38,21 +38,20 @@ jobs:
           cp capacitor.config.json android/app/src/main/assets/capacitor.config.json
           touch android/app/src/main/assets/public/cordova.js android/app/src/main/assets/public/cordova_plugins.js
 
-      - name: Build Android APK & Release Bundle
+      - name: Build Android APK
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew assembleRelease bundleRelease
+          ./gradlew assembleDebug
           cd ..
           mkdir -p dist-android
-          cp android/app/build/outputs/apk/release/*.apk dist-android/ || true
-          cp android/app/build/outputs/bundle/release/*.aab dist-android/ || true
+          cp -r android/app/build/outputs/* dist-android/
           ls -la dist-android/
 
-      - name: Upload Android Release Artifacts
+      - name: Upload Android Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: android-release-bundle
+          name: android-apk-bundle
           path: dist-android/
 
   build-ios:
